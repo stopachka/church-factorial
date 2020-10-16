@@ -8,7 +8,7 @@
 
 (def one (fn [f]
            (fn [v]
-             (f ((zero f) v)))) )
+             (f ((zero f) v)))))
 
 (def two (fn [f]
            (fn [v]
@@ -158,17 +158,17 @@
 (comment
   (church-numeral->int (church-dec (int->church-numeral 10))))
 
-; church-
+; church-minus
 ; ------------
 
-(def church- (fn [church-numeral-a]
-               (fn [church-numeral-b]
-                 ((church-numeral-b church-dec)
-                  church-numeral-a))))
+(def church-minus (fn [church-numeral-a]
+                    (fn [church-numeral-b]
+                      ((church-numeral-b church-dec)
+                       church-numeral-a))))
 
 (comment
   (church-numeral->int
-    ((church- (int->church-numeral 5)) two)))
+    ((church-minus (int->church-numeral 5)) two)))
 
 ; church-<=
 ; ---------
@@ -176,7 +176,7 @@
 (def church-<= (fn [church-numeral-a]
                  (fn [church-numeral-b]
                    (church-zero?
-                     ((church- church-numeral-a)
+                     ((church-minus church-numeral-a)
                       church-numeral-b)))))
 
 (comment
