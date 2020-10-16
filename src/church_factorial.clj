@@ -183,4 +183,3 @@
 
 (comment
   (church-numeral->int (factorial-yc (int->church-numeral 10))))
-
