@@ -204,12 +204,14 @@
 ; y-combinator
 ; ------------
 
+(def call-arg-with-arg (fn [x] (x x)))
+
 (def y-combinator
   (fn [f]
-    ((fn [x]
-       (x x))
-     (fn [x]
-       (f (fn [y] ((x x) y)))))))
+    (call-arg-with-arg
+      (fn [recurr]
+        (f (fn [next-arg-to-f]
+             ((recurr recurr) next-arg-to-f)))))))
 
 ; factorial-yc
 ; ------------
