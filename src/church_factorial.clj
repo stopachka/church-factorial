@@ -174,14 +174,14 @@
   (fn [injectable-f]
     ((fn [recursion-handler] (recursion-handler recursion-handler))
      (fn [recursion-handler]
-       (injectable-f (fn [& next-args]
-                       (apply (injectable-f recursion-handler) next-args )))))))
+       (injectable-f (fn [next-arg]
+                       ((recursion-handler recursion-handler) next-arg)))))))
 
 ; factorial-yc
 ; ------------
 
 (def injectable-factorial
-  (fn [factorial]
+  (fn [factorial-cb]
     (fn [church-numeral-n]
       ((church-if
          (church-zero? church-numeral-n)
@@ -189,7 +189,7 @@
          (fn []
            (church-*
              church-numeral-n
-             (factorial (church-dec church-numeral-n)))))))))
+             (factorial-cb (church-dec church-numeral-n)))))))))
 
 (def factorial-yc (make-recursable injectable-factorial))
 
