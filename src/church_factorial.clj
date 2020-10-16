@@ -4,15 +4,15 @@
 ; ------------
 
 (def zero (fn [f]
-            (fn [x] x)))
+            (fn [v] v)))
 
 (def one (fn [f]
-           (fn [x]
-             (f ((zero f) x)))) )
+           (fn [v]
+             (f ((zero f) v)))) )
 
 (def two (fn [f]
-           (fn [x]
-             (f ((one f) x)))))
+           (fn [v]
+             (f ((one f) v)))))
 
 ; church-numeral->int
 ; ---------------
@@ -29,7 +29,7 @@
 (def church-inc
   (fn [church-numeral]
     (fn [f]
-      (fn [x] (f ((church-numeral f) x))))))
+      (fn [v] (f ((church-numeral f) v))))))
 
 (comment (church-numeral->int (church-inc (church-inc one))))
 
@@ -52,11 +52,11 @@
   (fn [church-numeral-a]
     (fn [church-numeral-b]
       (fn [f]
-        (fn [x]
+        (fn [v]
           (
            (church-numeral-a
              (church-numeral-b f))
-           x))))))
+           v))))))
 
 (comment
   (church-numeral->int
@@ -66,13 +66,13 @@
 ; church-booleans
 ; ---------------
 
-(def church-true (fn [a]
-                   (fn [b]
-                     a)))
+(def church-true (fn [when-true]
+                   (fn [when-false]
+                     when-true)))
 
-(def church-false (fn [a]
-                    (fn [b]
-                      b)))
+(def church-false (fn [when-true]
+                    (fn [when-false]
+                      when-false)))
 
 ; church-bool->bool
 ; -----------------------
@@ -87,11 +87,11 @@
 ; church-if
 ; ---------
 
-(def church-if (fn [predicate]
-                 (fn [consequent]
-                   (fn [alternative]
-                     ((predicate consequent)
-                      alternative)))))
+(def church-if (fn [church-bool]
+                 (fn [when-true]
+                   (fn [when-false]
+                     ((church-bool when-true)
+                      when-false)))))
 
 (comment
   (church-numeral->int
@@ -103,38 +103,57 @@
       one)
      two)))
 
-
 ; church-zero?
 ; ------------
 
 (def church-zero?
   (fn [church-numeral]
     ((church-numeral
-       (fn [x] church-false))
+       (fn [v] church-false))
      church-true)))
 
 (comment
   (church-bool->bool (church-zero? zero))
   (church-bool->bool (church-zero? one)))
 
+; pair
+; ----
+
+(def church-pair (fn [a]
+                   (fn [b]
+                     (fn [selector]
+                       ((selector a) b)))))
+
+(def church-first (fn [pair]
+                    (pair church-true)))
+
+(def church-second (fn [pair]
+                     (pair church-false)))
+
+(comment
+  (let [p ((church-pair one) two)]
+    (map church-numeral->int [(church-first p) (church-second p)])))
+
+; shift-and-inc
+; -------------
+
+(def shift-and-inc (fn [pair]
+                     ((church-pair
+                        (church-second pair))
+                      (church-inc (church-second pair)))))
+
+(comment
+  (let [p (shift-and-inc ((church-pair one) two))]
+    (map church-numeral->int [(church-first p) (church-second p)])))
 
 ; church-dec
 ; -----------
 
 (def church-dec
-  "oh boy. this will need some serious unpacking"
-  (fn [n]
-    (fn [f]
-      (fn [x]
-        (((n
-            (fn [g]
-              (fn [h]
-                (h
-                  (g f)))))
-          (fn [u]
-            x))
-         (fn [u]
-           u))))))
+  (fn [church-numeral]
+    (church-first
+      ((church-numeral shift-and-inc)
+       ((church-pair zero) zero)))))
 
 (comment
   (church-numeral->int (church-dec (int->church-numeral 10))))
@@ -181,14 +200,16 @@
 (comment
   (church-numeral->int (factorial-v0 (int->church-numeral 5))))
 
+
 ; y-combinator
 ; ------------
 
-(def y-combinator (fn [f]
-                    ((fn [x] (x x))
-                     (fn [x] (f (fn [y]
-                                  ((x x) y)))))))
-
+(def y-combinator
+  (fn [f]
+    ((fn [x]
+       (x x))
+     (fn [x]
+       (f (fn [y] ((x x) y)))))))
 
 ; factorial-yc
 ; ------------
@@ -208,133 +229,3 @@
 (comment
   (church-numeral->int (factorial-yc (int->church-numeral 5))))
 
-; expand without variable names!
-; ------------------------------
-(comment
-  (church-numeral->int
-    (
-     (
-      ; y-combintaor
-      (fn [f]
-        ((fn [x] (x x))
-         (fn [x] (f (fn [y]
-                      ((x x) y))))))
-      ; factorial-f
-      (fn [factorial]
-        (fn [church-numeral-n]
-          ((((
-              ; church-if
-              (fn [predicate]
-                (fn [consequent]
-                  (fn [alternative]
-                    ((predicate consequent)
-                     alternative))))
-               (
-                (
-                 ; church-<=
-                 (fn [church-numeral-a]
-                   (fn [church-numeral-b]
-                     (
-                      ; church-zero?
-                      (fn [church-numeral]
-                        ((church-numeral
-                           (fn [x]
-                             ; church-false
-                             (fn [a]
-                               (fn [b]
-                                 b))))
-                         ; church-true
-                         (fn [a]
-                           (fn [b]
-                             a))))
-                       (
-                        (
-                         ; church-
-                         (fn [church-numeral-a]
-                           (fn [church-numeral-b]
-                             ((church-numeral-b
-                                ; church-dec
-                                (fn [n]
-                                  (fn [f]
-                                    (fn [x]
-                                      (((n
-                                          (fn [g]
-                                            (fn [h]
-                                              (h
-                                                (g f)))))
-                                        (fn [u]
-                                          x))
-                                       (fn [u]
-                                         u))))))
-                              church-numeral-a)))
-                         church-numeral-a)
-                        church-numeral-b))))
-                 church-numeral-n)
-                ; one
-                (
-                 ; church-inc
-                 (fn [church-numeral]
-                   (fn [f]
-                     (fn [x] (f ((church-numeral f) x)))))
-                 ; zero
-                 (fn [f]
-                   (fn [x] x))))
-              )
-             (fn [] church-numeral-n))
-            (fn []
-              ((
-                ; church-*
-                (fn [church-numeral-a]
-                  (fn [church-numeral-b]
-                    (fn [f]
-                      (fn [x]
-                        (
-                         (church-numeral-a
-                           (church-numeral-b f))
-                         x)))))
-                 church-numeral-n)
-               (factorial (
-                           ; church-dec
-                           (fn [n]
-                             (fn [f]
-                               (fn [x]
-                                 (((n
-                                     (fn [g]
-                                       (fn [h]
-                                         (h
-                                           (g f)))))
-                                   (fn [u]
-                                     x))
-                                  (fn [u]
-                                    u)))))
-                           church-numeral-n))))))))
-      )
-     ; 5
-     (
-      ; church-inc
-      (fn [church-numeral]
-        (fn [f]
-          (fn [x] (f ((church-numeral f) x)))))
-       (
-        ; church-inc
-        (fn [church-numeral]
-          (fn [f]
-            (fn [x] (f ((church-numeral f) x)))))
-         (
-          ; church-inc
-          (fn [church-numeral]
-            (fn [f]
-              (fn [x] (f ((church-numeral f) x)))))
-           (
-            ; church-inc
-            (fn [church-numeral]
-              (fn [f]
-                (fn [x] (f ((church-numeral f) x)))))
-             (
-              ; church-inc
-              (fn [church-numeral]
-                (fn [f]
-                  (fn [x] (f ((church-numeral f) x)))))
-              ; zero
-              (fn [f]
-                (fn [x] x))))))))))
