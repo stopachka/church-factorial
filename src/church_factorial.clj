@@ -1,5 +1,35 @@
 (ns church-factorial)
 
+; pair
+; ----
+
+(def church-pair (fn [a b]
+                   (fn [selector]
+                     (selector a b))))
+
+(def take-first-arg (fn [a b] a))
+(def church-first (fn [pair]
+                    (pair take-first-arg)))
+
+(def take-second-arg (fn [a b] b))
+(def church-second (fn [pair]
+                     (pair take-second-arg)))
+
+(comment
+  (def ex-pair (church-pair 0 1))
+  (church-first ex-pair)
+  (church-second ex-pair))
+
+; factorial-clj
+; -------------
+
+(defn factorial-clj [n]
+  (if (zero? n)
+    1
+    (* n (factorial-clj (dec n)))))
+
+(comment (factorial-clj 5))
+
 ; church-numerals: 0-2
 ; ------------
 
@@ -41,6 +71,30 @@
 
 (comment
   (church-numeral->int (int->church-numeral 5)))
+
+; shift-and-inc
+; -------------
+
+(def shift-and-inc (fn [pair]
+                     (church-pair
+                       (church-second pair)
+                       (church-inc (church-second pair)))))
+
+(comment
+  (let [p (shift-and-inc (church-pair one two))]
+    (map church-numeral->int [(church-first p) (church-second p)])))
+
+; church-dec
+; -----------
+
+(def church-dec
+  (fn [church-numeral]
+    (church-first
+      (church-numeral shift-and-inc
+                      (church-pair zero zero)))))
+
+(comment
+  (church-numeral->int (church-dec (int->church-numeral 10))))
 
 ; church-*
 ; --------------
@@ -96,46 +150,6 @@
   (church-bool->bool (church-zero? zero))
   (church-bool->bool (church-zero? one)))
 
-; pair
-; ----
-
-(def church-pair (fn [a b]
-                   (fn [selector]
-                     (selector a b))))
-
-(def church-first (fn [pair]
-                    (pair church-true)))
-
-(def church-second (fn [pair]
-                     (pair church-false)))
-
-(comment
-  (let [p (church-pair one two)]
-    (map church-numeral->int [(church-first p) (church-second p)])))
-
-; shift-and-inc
-; -------------
-
-(def shift-and-inc (fn [pair]
-                     (church-pair
-                       (church-second pair)
-                       (church-inc (church-second pair)))))
-
-(comment
-  (let [p (shift-and-inc (church-pair one two))]
-    (map church-numeral->int [(church-first p) (church-second p)])))
-
-; church-dec
-; -----------
-
-(def church-dec
-  (fn [church-numeral]
-    (church-first
-      (church-numeral shift-and-inc
-                      (church-pair zero zero)))))
-
-(comment
-  (church-numeral->int (church-dec (int->church-numeral 10))))
 
 ; factorial-v0
 ; ------------
@@ -153,33 +167,31 @@
 (comment
   (church-numeral->int (factorial-v0 (int->church-numeral 5))))
 
-
 ; y-combinator
 ; ------------
 
-(def call-arg-with-arg (fn [x] (x x)))
-
-(def y-combinator
-  (fn [f]
-    (call-arg-with-arg
-      (fn [next-recursion-f]
-        (f (fn [& next-args]
-             (apply (f next-recursion-f) next-args)))))))
+(def make-recursable
+  (fn [injectable-f]
+    ((fn [recursion-handler] (recursion-handler recursion-handler))
+     (fn [recursion-handler]
+       (injectable-f (fn [& next-args]
+                       (apply (injectable-f recursion-handler) next-args )))))))
 
 ; factorial-yc
 ; ------------
 
-(def factorial-f (fn [factorial]
-                   (fn [church-numeral-n]
-                     ((church-if
-                        (church-zero? church-numeral-n)
-                        (fn [] one)
-                        (fn []
-                          (church-*
-                            church-numeral-n
-                            (factorial-v0 (church-dec church-numeral-n)))))))))
+(def injectable-factorial
+  (fn [factorial]
+    (fn [church-numeral-n]
+      ((church-if
+         (church-zero? church-numeral-n)
+         (fn [] one)
+         (fn []
+           (church-*
+             church-numeral-n
+             (factorial (church-dec church-numeral-n)))))))))
 
-(def factorial-yc (y-combinator factorial-f))
+(def factorial-yc (make-recursable injectable-factorial))
 
 (comment
-  (church-numeral->int (factorial-yc (int->church-numeral 10))))
+  (church-numeral->int (factorial-yc (int->church-numeral 5))))
