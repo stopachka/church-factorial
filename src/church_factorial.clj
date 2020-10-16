@@ -137,32 +137,6 @@
 (comment
   (church-numeral->int (church-dec (int->church-numeral 10))))
 
-; church-minus
-; ------------
-
-#_(def church-minus (fn [church-numeral-a]
-                    (fn [church-numeral-b]
-                      ((church-numeral-b church-dec)
-                       church-numeral-a))))
-
-#_(comment
-  (church-numeral->int
-    ((church-minus (int->church-numeral 5)) two)))
-
-; church-<=
-; ---------
-
-#_(def church-<= (fn [church-numeral-a]
-                 (fn [church-numeral-b]
-                   (church-zero?
-                     ((church-minus church-numeral-a)
-                      church-numeral-b)))))
-
-#_(comment
-  (church-bool->bool ((church-<= two) one))
-  (church-bool->bool ((church-<= one) two))
-  (church-bool->bool ((church-<= one) one)))
-
 ; factorial-v0
 ; ------------
 
