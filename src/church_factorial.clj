@@ -235,4 +235,4 @@
 
     :else form))
 
-(comment (expand '(factorial-yc (int->church-numeral 5))))
+(comment (expand '(factorial-yc (church-inc (church-inc (church-inc two))))))
