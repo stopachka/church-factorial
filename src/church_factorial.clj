@@ -68,9 +68,9 @@
 ; --------------
 
 (def# church-inc
-      (fn [church-numeral]
-        (fn [f v]
-          (f (church-numeral f v)))))
+  (fn [church-numeral]
+    (fn [f v]
+      (f (church-numeral f v)))))
 
 (comment (church-numeral->int (church-inc (church-inc one))))
 
@@ -101,10 +101,10 @@
 ; -----------
 
 (def# church-dec
-      (fn [church-numeral]
-        (church-first
-          (church-numeral shift-and-inc
-                          (church-pair zero zero)))))
+  (fn [church-numeral]
+    (church-first
+      (church-numeral shift-and-inc
+                      (church-pair zero zero)))))
 
 (comment
   (church-numeral->int (church-dec (int->church-numeral 10))))
@@ -113,9 +113,9 @@
 ; --------------
 
 (def# church-*
-      (fn [num-a num-b]
-        (fn [f v]
-          (num-a (partial num-b f) v))))
+  (fn [num-a num-b]
+    (fn [f v]
+      (num-a (partial num-b f) v))))
 
 (comment
   (church-numeral->int
@@ -156,8 +156,8 @@
 ; ------------
 
 (def# church-zero?
-      (fn [church-numeral]
-        (church-numeral (fn [v] church-false) church-true)))
+  (fn [church-numeral]
+    (church-numeral (fn [v] church-false) church-true)))
 
 (comment
   (church-bool->bool (church-zero? zero))
@@ -168,14 +168,14 @@
 ; ------------
 
 (def# factorial-v0
-      (fn [church-numeral-n]
-        ((church-if
-           (church-zero? church-numeral-n)
-           (fn [] one)
-           (fn []
-             (church-*
-               church-numeral-n
-               (factorial-v0 (church-dec church-numeral-n))))))))
+  (fn [church-numeral-n]
+    ((church-if
+       (church-zero? church-numeral-n)
+       (fn [] one)
+       (fn []
+         (church-*
+           church-numeral-n
+           (factorial-v0 (church-dec church-numeral-n))))))))
 
 (comment
   (church-numeral->int (factorial-v0 (int->church-numeral 5))))
@@ -184,25 +184,25 @@
 ; ------------
 
 (def# make-recursable
-      (fn [injectable-f]
-        ((fn [recursion-handler] (recursion-handler recursion-handler))
-         (fn [recursion-handler]
-           (injectable-f (fn [next-arg]
-                           ((recursion-handler recursion-handler) next-arg)))))))
+  (fn [injectable-f]
+    ((fn [recursion-handler] (recursion-handler recursion-handler))
+     (fn [recursion-handler]
+       (injectable-f (fn [next-arg]
+                       ((recursion-handler recursion-handler) next-arg)))))))
 
 ; factorial-yc
 ; ------------
 
 (def# injectable-factorial
-      (fn [factorial-cb]
-        (fn [church-numeral-n]
-          ((church-if
-             (church-zero? church-numeral-n)
-             (fn [] one)
-             (fn []
-               (church-*
-                 church-numeral-n
-                 (factorial-cb (church-dec church-numeral-n)))))))))
+  (fn [factorial-cb]
+    (fn [church-numeral-n]
+      ((church-if
+         (church-zero? church-numeral-n)
+         (fn [] one)
+         (fn []
+           (church-*
+             church-numeral-n
+             (factorial-cb (church-dec church-numeral-n)))))))))
 
 (def# factorial-yc (make-recursable injectable-factorial))
 
